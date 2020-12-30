@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        *, *:before, *:after {
+            font-size: 16px;
+            box-sizing: border-box;
+            font-family: sans-serif;
+            }
+
+            .cite {
+            color: #e8f8ff;
+            padding: 0.5em;
+            display: block;
+            }
+
+            body {
+            margin: 0;
+            background: #00a2eb;
+            }
+
+            #box {
+            margin: 0 auto;
+            max-width: 20em;
+            border-radius: 0.4em;
+            background: #9be0ff;
+            padding: 0.5em;
+            }
+
+            ul {
+            padding: 0;
+            margin: 0;
+            }
+
+            .item, .drag_tab {
+            vertical-align: middle;
+            }
+
+            .item {
+            z-index: 1;
+            display: block;
+            min-height: 2em;
+            background: #00a2eb;
+            margin: 0 0 0.4em;
+            border-radius: 0.4em;
+            list-style: none;
+            }
+
+            .drag_tab {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                background:url(ic-remocon.png) no-repeat;
+                cursor: move;
+            }
+
+            #place-holder {
+            z-index: 0;
+            display: block;
+            min-height: 2em;
+            background: #00a2eb;
+            margin: 0 0 0.4em;
+            border-radius: 0.4em;
+            list-style: none;
+            opacity: 0.7;
+            }
+
+            .draggable {
+                position: fixed;
+                box-shadow: 0 0 0.2em 0.1em #017ab1;
+            }
+
+            .item .cite {
+                display: inline-block;
+                padding: 0;
+                color: black;
+                font-weight: bold;
+            }
+            .change_btn::before {
+                content:"";
+                display:inline-block;
+                background:url(icon.png) no-repeat;
+                width:14px;
+                height:12px;
+            }
+    </style>
+</head>
+<body>
+<div id="box">
+    <ul id="list">
+        <li class="item disabled"><span class="text">Visit</span></li>
+        <li class="item disabled"><span class="text">My</span></li>
+        <li class="item"><span class="text">Website</span></li>
+        <li class="item"><span class="text">For</span></li>
+        <li class="item"><span class="text">More</span></li>
+        <li class="item"><span class="text">Info</span></li>
+        <li class="item"><span class="text">And</span></li>
+        <li class="item disabled"><span class="text">Projects!</span></li>
+    </ul>  
+    <button type="button" class="change_btn">항목 순서 변경</button>
+    <button type="button" class="cancle_btn">취소</button>
+</div>
+<script
+  src="https://code.jquery.com/jquery-1.11.1.min.js"
+  integrity="sha256-VAvG3sHdS5LqTT+5A/aeq/bZGa/Uj04xKxY8KM/w9EE="
+  crossorigin="anonymous"></script>
+<script>
+    var $changeBtn = $('.change_btn'),
+        $cancle_btn = $('.cancle_btn'),
+        $listLi = $('#list li'),
+        dropList = $('#list'),        
+        ableChangeFlag = false,
+        cloneList = {};
+
+
+    $changeBtn.on('click', function() {
+        ableChangeFlag === false ? addDragZone($listLi) : removeDragZone($listLi);
+        cloneList = dropList.find('li').clone();
+    });
+    $cancle_btn.on('click', function() {
+        dropList.empty();
+        dropList.append(cloneList);
+        removeDragZone($listLi);
+    })
+    
+    
+    // Drop존 생성
+    function addDragZone(wrap) {
+        ableChangeFlag = true;
+        $changeBtn.text('순서변경완료');
+        $.each(wrap, function() {
+            if(!$(this).hasClass('disabled')) $(this).prepend('<div class="drag_tab"></div>');
+        })
+    }
+    
+    
+    // Drop존 삭제
+    function removeDragZone(wrap) {
+        ableChangeFlag = false;
+        $changeBtn.text('항목 순서 변경');
+        $.each(wrap.find('.drag_tab'), function() {
+            console.log('aa')
+            $(this).remove();
+        })
+    }
+
+    $(document).ready(function() {
+        var x, y, mx, my, lastItem;
+        
+        //click event
+        $(document).on("mousedown", ".drag_tab", function(mouse) {
+            mx = mouse.clientX;
+            my = mouse.clientY;
+            x = mx - $(this).parent().offset().left;
+            y = my - $(this).parent().offset().top;
+            
+            var width = $(this).parent().width();
+            var height = $(this).parent().height();
+            lastItem = $(".item:last").offset().top + ($(".item:last").height() / 2);
+            
+            $(this).parent().css({ "width" : width, "height" : height });
+            $(this).parent().after("<li id='place-holder'></li>");
+            $("#place-holder").css({ "height" : $(this).height() });
+            $(this).parent().addClass("draggable");
+        });
+        //drag event
+        $(document).on("mousemove", function(mouse) {
+            var holdPlace = $("#place-holder");
+            if($(".item").hasClass("draggable")) {
+            mx = mouse.clientX;
+            my = mouse.clientY;
+            
+            var item = $(".item");
+            for(i = item.length - 1; i >= 0; i--) {
+                if(!$(item[i]).hasClass("draggable")) {
+                //if(true) {
+                var dragTop = $(".draggable").offset().top;
+                var noDrag = $(item[i]).offset().top + ($(item[i]).height() / 2);
+                
+                //console.log(lastItem);
+                if(dragTop > lastItem) {
+                    //console.log($(item[i]).html());
+                    $("#place-holder").remove();
+                    $("#list").append(holdPlace);
+                }
+                if(dragTop < noDrag) {
+                    //console.log($(item[i]).html());
+                    $("#place-holder").remove();
+                    $(item[i]).before(holdPlace);
+                }
+                }
+            }
+            $(".draggable").css({ "top" : my - y});//, "left" : mx - x });
+            
+            }
+        });
+        //mouse release event
+        $(document).on("mouseup", function() {
+            if($(".item").hasClass("draggable")) {
+                deselect();
+            }
+            var toPlace = $(".draggable");
+            $(".draggable").remove();
+            //console.log(toPlace);
+            $(document).find("#place-holder").after(toPlace).remove();
+            $(".item").attr("style", "").removeClass("draggable");
+        });
+        function deselect() {
+            if (window.getSelection) {
+            if (window.getSelection().empty) {  // Chrome
+                window.getSelection().empty();
+            } else
+            if (window.getSelection().removeAllRanges) {  // Firefox
+                window.getSelection().removeAllRanges();
+            }
+            } else
+            if (document.selection) {  // IE?
+            document.selection.empty();
+            }
+        }
+        });
+</script>
+</body>
+</html>
