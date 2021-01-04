@@ -66,4 +66,4 @@ function checkPosition(list, target) {
     return result || -1;
 }
 
-drag('#list', '.drag-item');
+drag('#list', '.drag-item.able');
